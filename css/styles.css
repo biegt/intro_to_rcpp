@@ -1,0 +1,29 @@
+slides > slide.title-slide hgroup h1 {
+  font-size: 60px;
+  letter-spacing: 10;
+  color: #008a85;
+} 
+
+h2 {
+  color: #008a85;
+} 
+
+.gdbar img {
+}
+
+aside.gdbar {
+  background: -webkit-gradient(linear, 0% 50%, 100% 50%, color-stop(0%, #FFFFFF), color-stop(100%, #008a85)) no-repeat;
+  background: linear-gradient(left, #FFFFFF, #008a85) no-repeat;
+  height: 100px;
+
+}
+
+.title-slide {
+ background-color: white; 
+}
+
+slides > slide:not(.nobackground):before {
+  width: 105px;
+  height: 119px;
+  background-size: 150px 75px;
+}

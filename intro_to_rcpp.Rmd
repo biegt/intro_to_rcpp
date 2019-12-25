@@ -1,0 +1,33 @@
+---
+title: "Introduction to Rcpp"
+author: "Till Bieg"
+date: "December 25, 2019"
+output:
+  ioslides_presentation:
+    logo: images/rcpp_logo_round.png
+    widescreen: true
+    css: css/styles.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+```
+
+## Overview
+
+- ...
+- ...
+
+## What is Rcpp?
+
+- R package that allows for easy integration of C++ and R
+- ...
+
+## Chunk of sample code
+```{r test_chunk}
+summary(cars)
+```
+
+## References
+...
