@@ -22,8 +22,33 @@ aside.gdbar {
  background-color: white; 
 }
 
+/* paragraphs */ 
+p {
+  font-size: 32px;
+}
+
+/* unordered lists */ 
+ul {
+   font-size: 32px;
+}
+
+/* code chunks */ 
+pre {
+  font-size: 22px;
+}
+
 slides > slide:not(.nobackground):before {
   width: 105px;
   height: 119px;
   background-size: 150px 75px;
+}
+
+table.rmdtable th {
+  background: #008a85 !important;
+  border-color: white;
+}
+
+.bottom-logo {
+  position: fixed;
+  bottom: 0;
 }

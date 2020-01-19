@@ -1,7 +1,7 @@
 ---
 title: "Introduction to Rcpp"
 author: "Till Bieg"
-date: "December 25, 2019"
+date: "January 19, 2020"
 output:
   ioslides_presentation:
     logo: images/rcpp_logo_round.png
@@ -10,24 +10,189 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set()
 library(tidyverse)
+library(Rcpp)
 ```
 
 ## Overview
 
-- ...
-- ...
+- Introduction
+- Example of writing a function using Rcpp
+- Comparing different inputs
+- Example with speed comparison
 
-## What is Rcpp?
+<div class="bottom-logo">
+<font size = "4">**Slides are based on the *Rcpp* chapter by Wickham (2019). See references.** </font> <p>
+![](images/rcpp_logo_transparent_small.png)
+</div>
 
-- R package that allows for easy integration of C++ and R
-- ...
+## Introduction: What is Rcpp?
+
+- R package created by Dirk Eddelbuettel and Romain Francois (main contributors) in 2011
+- allows for *easy* integration of C++ and R
+- generally possible to integrate code from other languages into R as well (e.g. Fortran), but it is a lot more complicated
+
+<p>
+
+```{r, echo = TRUE, eval = FALSE}
+ ### <b>
+library(Rcpp)
+### </b>
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Introduction: One step back - what is C++?
+
+<div class="columns-2">
+
+  - general purpose programming language
+  - created by Bjarne Strousstrup in 1979
+  - extension of the C
+  - **close to machine code = runs (very) fast!**
+  
+  ![](images/cpp_code.png)
+</div>
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Introduction: Why Rcpp? {.flexbox .vcenter}
+*"Code written using Rcpp classes is easier to read, write and maintain, without loosing performance."* (Eddelbuettel & Francois, 2017)
+
+- To optimize your R code (overcome bottlenecks)
+- Code runs faster than R code
+- Code is (hopefully) easy to write (see sugar functions)
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Use cases for Rcpp
+Typical bottlenecks that C++ can address include:
+
+- Loops where subsequent iterations depend on previous ones
+- Recursive functions and functions that are called many times (overhead of calling function in C++ is much lower)
+- Problems that involve data structures and algorithms that R doesn’t provide (implementation of important data structures in C++ through the standard template library)
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## A first example using Rcpp::cppFunction()
+
+1. Pass C++ code to the `cppFunction`
+2. Use the newly created function just like any other R function
+
+```{r, eval = TRUE}
+library(Rcpp)
+
+cppFunction('int addC(int x, int y, int z) {
+  int sum = x + y + z;
+  return sum;
+}')
+
+addC(1, 2, 3)
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Another example using Rcpp::cppFunction() 1/2
+
+Implementing a function that calculates row sums:
+
+```{r, eval = TRUE}
+cppFunction('NumericVector rowSumsC(NumericMatrix x) {
+  int nrow = x.nrow(), ncol = x.ncol();
+  NumericVector out(nrow);
+
+  for (int i = 0; i < nrow; i++) {
+    double total = 0;
+    for (int j = 0; j < ncol; j++) {
+      total += x(i, j);
+    }
+    out[i] = total;
+  }
+  return out;
+}')
+
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Another example using Rcpp::cppFunction() 2/2
+
+```{r, eval = TRUE}
+
+set.seed(42)
+x <- matrix(sample(100), 10)
+
+# "official" R implementation
+rowSums(x)
+
+# Rcpp implementation
+rowSumsC(x)
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Rcpp::sourceCpp() 1/2
+* sourceCpp: Function used to source C++ files into R
+* the usual workflow when working on "real world problems" <p>
+
+**Important:**
+```{Rcpp, eval = FALSE}
+/* Your stand alone C++ file (*.cpp) should always start with: */
+#include <Rcpp.h>
+using namespace Rcpp;
+
+/* Prefix each function that you want available within R with */
+
+// [[Rcpp::export]]
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Rcpp::sourceCpp() 2/2
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Rcpp sugar functions
+Rcpp provides a lot of syntactic “sugar” to ensure that C++ functions work very similarly to their R equivalents. In fact, Rcpp sugar makes it possible to write efficient C++ code that looks almost identical to its R equivalent. If there’s a sugar version of the function you’re interested in, you should use it: it’ll be both expressive and well tested. Sugar functions aren’t always faster than a handwritten equivalent, but they will get faster in the future as more time is spent on optimising Rcpp.
+
+Sugar functions can be roughly broken down into
+
+arithmetic and logical operators
+logical summary functions
+vector views
+other useful functions
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Rcpp sugar functions: Example
+...
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Case study with speed comparison
+...
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## References
+
+- Eddelbuettel, D., & Francois, R. (2011). Rcpp: Seamless R and C++ Integration. *Journal of Statistical Software, 40*(8), 1-18. Retrieved from http://www.jstatsoft.org/v40/i08/
+- Eddelbuettel, D., & Francois, R. (2011). *Rcpp syntatic sugar*. Retrieved from http://dirk.eddelbuettel.com/code/rcpp/Rcpp-sugar.pdf.
+- Wickham, H. (2019). Rewriting R code in C++. *Advanced R*. Retrieved from https://adv-r.hadley.nz/rcpp.html
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
 
 ## Chunk of sample code
 ```{r test_chunk}
 summary(cars)
+
+for (i in 1:4) {
+  print(i)
+}
 ```
 
-## References
-...
+## Some table
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell
