@@ -9,27 +9,30 @@ output:
     css: css/styles.css
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set()
 library(tidyverse)
 library(Rcpp)
+
+Sys.setenv(PATH = paste("C:/Rtools/bin", Sys.getenv("PATH"), sep=";"))
+Sys.setenv(BINPREF = "C:/Rtools/mingw_$(WIN)/bin/")
 ```
 
 ## Overview
 
 - Introduction
-- Example of writing a function using Rcpp
-- Comparing different inputs
+- cppFunction() / sourceCpp()
+- Sugar functions
 - Example with speed comparison
 
 <div class="bottom-logo">
-<font size = "4">**Slides are based on the *Rcpp* chapter by Wickham (2019). See references.** </font> <p>
+<font size = "4">**Slides are based on the *Rcpp* chapter by Wickham (2019) and best enjoyed in fullscreen (F11 in Google Chrome).** </font> <p>
 ![](images/rcpp_logo_transparent_small.png)
 </div>
 
 ## Introduction: What is Rcpp?
 
-- R package created by Dirk Eddelbuettel and Romain Francois (main contributors) in 2011
+- R package created by Dirk Eddelbuettel and Romain François (main contributors) in 2011
 - allows for *easy* integration of C++ and R
 - generally possible to integrate code from other languages into R as well (e.g. Fortran), but it is a lot more complicated
 
@@ -58,7 +61,8 @@ library(Rcpp)
 <div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
 
 ## Introduction: Why Rcpp? {.flexbox .vcenter}
-*"Code written using Rcpp classes is easier to read, write and maintain, without loosing performance."* (Eddelbuettel & Francois, 2017)
+*"Code written using Rcpp classes is easier to read, write and maintain, without losing performance."*
+(Eddelbuettel & François, 2017)
 
 - To optimize your R code (overcome bottlenecks)
 - Code runs faster than R code
@@ -132,8 +136,8 @@ rowSumsC(x)
 
 <div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
 
-## Rcpp::sourceCpp() 1/2
-* sourceCpp: Function used to source C++ files into R
+## Rcpp::sourceCpp() 1/3
+* `sourceCpp`: Function used to source C++ files into R
 * the usual workflow when working on "real world problems" <p>
 
 **Important:**
@@ -143,56 +147,161 @@ rowSumsC(x)
 using namespace Rcpp;
 
 /* Prefix each function that you want available within R with */
-
 // [[Rcpp::export]]
 ```
 
 <div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
 
-## Rcpp::sourceCpp() 2/2
+## Rcpp::sourceCpp() 2/3
+
+Your C++ file should look like this:
+
+```{Rcpp, eval = FALSE}
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+double meanC(NumericVector x) {
+  int n = x.size();
+  double total = 0;
+
+  for(int i = 0; i < n; ++i) {
+    total += x[i];
+  }
+  return total / n;
+}
+```
 
 <div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
 
-## Rcpp sugar functions
-Rcpp provides a lot of syntactic “sugar” to ensure that C++ functions work very similarly to their R equivalents. In fact, Rcpp sugar makes it possible to write efficient C++ code that looks almost identical to its R equivalent. If there’s a sugar version of the function you’re interested in, you should use it: it’ll be both expressive and well tested. Sugar functions aren’t always faster than a handwritten equivalent, but they will get faster in the future as more time is spent on optimising Rcpp.
+## Rcpp::sourceCpp() 3/3
+- use `sourceCpp("path/to/file.cpp")` to compile the C++ code
+- creates corresponding R function(s) and adds them to your session
+- note: functions must be recreated everytime you restart R (can't be saved in `.Rdata`)
 
-Sugar functions can be roughly broken down into
-
-arithmetic and logical operators
-logical summary functions
-vector views
-other useful functions
+```{r, eval = FALSE}
+sourceCpp("path/to/file.cpp")
+```
 
 <div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
 
-## Rcpp sugar functions: Example
-...
+## Rcpp sugar functions 1/3
+
+- ensure that functions work very similarly to their R equivalents 
+- make it possible to write efficient C++ code that looks almost identical to its R equivalent
+- keyword **vectorization**
+- if there’s a sugar version of a function, use it!
+
+<p>
+
+```{Rcpp, eval = FALSE}
+mean(some_vector)
+```
+
+<div class="bottom-logo">  ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Rcpp sugar functions 2/3
+
+Category | Examples
+---------|---------
+arithmetic / logical operators | `+`, `*`, `-`
+logical summary functions      | `any()`, `all()`
+vector views                   | `head(), tail()`
+other useful functions         | `abs()`, `mean()`
+
+
 <div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
 
-## Case study with speed comparison
-...
+## Rcpp sugar functions 3/3
+
+```{r, eval = FALSE}
+# R function:
+pdistR <- function(x, ys) {
+  sqrt((x - ys) ^ 2)
+}
+```
+
+```{Rcpp, eval = FALSE}
+/* Rcpp equivalent (note sqrt, pow, -): */
+#include <Rcpp.h>
+using namespace Rcpp;
+
+// [[Rcpp::export]]
+NumericVector pdistC2(double x, NumericVector ys) {
+  return sqrt(pow((x - ys), 2));
+}
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Case study with speed comparison: Gibbs sampler 1/3
+```{r}
+gibbs_r <- function(N, thin) {
+  mat <- matrix(nrow = N, ncol = 2)
+  x <- y <- 0
+
+  for (i in 1:N) {
+    for (j in 1:thin) {
+      x <- rgamma(1, 3, y * y + 4)
+      y <- rnorm(1, 1 / (x + 1), 1 / sqrt(2 * (x + 1)))
+    }
+    mat[i, ] <- c(x, y)
+  }
+  mat
+}
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Case study with speed comparison: Gibbs sampler 2/3 {.smaller}
+
+```{r}
+cppFunction('NumericMatrix gibbs_cpp(int N, int thin) {
+               NumericMatrix mat(N, 2);
+               double x = 0, y = 0;
+             
+               for(int i = 0; i < N; i++) {
+                 for(int j = 0; j < thin; j++) {
+                   x = rgamma(1, 3, 1 / (y * y + 4))[0];
+                   y = rnorm(1, 1 / (x + 1), 1 / sqrt(2 * (x + 1)))[0];
+                 }
+                 mat(i, 0) = x;
+                 mat(i, 1) = y;
+               }
+             
+               return(mat);
+             }'
+           )
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## Case study with speed comparison: Gibbs sampler 3/3
+
+```{r}
+library(microbenchmark)
+
+microbenchmark(gibbs_r(100, 10),
+               gibbs_cpp(100, 10))
+```
+
+<div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
+
+## There's more...
+
+- this presentation only covered some core functionalities of `Rcpp`
+- there is a lot more interesting stuff...
+  + `Rcpp` in R packages
+  + data structures, attributes, missing values in `Rcpp`
+  + ...
+- see the references for further sources
 
 <div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
 
 ## References
 
-- Eddelbuettel, D., & Francois, R. (2011). Rcpp: Seamless R and C++ Integration. *Journal of Statistical Software, 40*(8), 1-18. Retrieved from http://www.jstatsoft.org/v40/i08/
-- Eddelbuettel, D., & Francois, R. (2011). *Rcpp syntatic sugar*. Retrieved from http://dirk.eddelbuettel.com/code/rcpp/Rcpp-sugar.pdf.
+- Eddelbuettel, D., & François, R. (2011). Rcpp: Seamless R and C++ Integration. *Journal of Statistical Software, 40*(8), 1-18. Retrieved from http://www.jstatsoft.org/v40/i08/
+- Eddelbuettel, D., & François, R. (2011). *Rcpp syntatic sugar*. Retrieved from http://dirk.eddelbuettel.com/code/rcpp/Rcpp-sugar.pdf.
 - Wickham, H. (2019). Rewriting R code in C++. *Advanced R*. Retrieved from https://adv-r.hadley.nz/rcpp.html
 
 <div class="bottom-logo"> ![](images/rcpp_logo_transparent_small.png) <p> </div>
-
-## Chunk of sample code
-```{r test_chunk}
-summary(cars)
-
-for (i in 1:4) {
-  print(i)
-}
-```
-
-## Some table
-First Header  | Second Header
-------------- | -------------
-Content Cell  | Content Cell
-Content Cell  | Content Cell
